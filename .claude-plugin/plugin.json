@@ -1,0 +1,21 @@
+{
+  "name": "status-light",
+  "displayName": "Status light",
+  "version": "0.1.0",
+  "description": "A colored light for whose move it is: Claude working, waiting on your approval or answer, waiting on background tasks, or done.",
+  "author": { "name": "Hugo Sales" },
+  "homepage": "https://github.com/someonewithpc/claude-mod-status-light",
+  "repository": "https://github.com/someonewithpc/claude-mod-status-light",
+  "license": "MIT",
+  "keywords": ["status", "statusline", "permission", "idle", "background"],
+  "userConfig": {
+    "inline": {
+      "type": "string",
+      "title": "Line under the prompt",
+      "description": "Show the light as a line under the prompt. Turn it off when your statusLine script shows it instead.",
+      "required": false,
+      "default": "on",
+      "options": ["on", "off"]
+    }
+  }
+}
