@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Prints the session's status light as one colored segment for a statusLine
+# script. Reads the statusLine JSON on stdin, or takes the session id as $1.
+set -euo pipefail
+
+if [ $# -ge 1 ]; then
+  sid=$1
+else
+  sid=$(jq -r '.session_id // empty')
+fi
+[ -n "$sid" ] || exit 0
+
+file="${XDG_RUNTIME_DIR:-/tmp}/claude-status-light/$sid.json"
+[ -s "$file" ] || exit 0
+
+jq -rj --argjson now "$(date +%s)" '
+  def pill($sgr; $text): "\u001b[1;\($sgr)m \($text | ascii_upcase) \u001b[0m";
+  def ago($s): ($now - ($s / 1000 | floor)) as $d
+    | if $d < 60 then "\($d)s"
+      elif $d < 3600 then "\($d / 60 | floor)m"
+      else "\($d / 3600 | floor)h\($d % 3600 / 60 | floor)m" end;
+  {
+    working:     "97;44",
+    approval:    "97;41",
+    question:    "97;45",
+    plan:        "97;45",
+    compacting:  "30;46",
+    background:  "30;43",
+    done:        "30;42",
+    interrupted: "97;100",
+    error:       "97;41",
+    ready:       "97;100"
+  }[.kind] as $sgr
+  | pill($sgr // "0"; .label)
+    + (if .detail != "" then " \(.detail)" else "" end)
+    + (if .kind == "ready" then "" else " \u001b[2m\(ago(.since))\u001b[0m" end)
+' "$file"
