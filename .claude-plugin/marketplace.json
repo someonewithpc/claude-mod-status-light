@@ -1,0 +1,5 @@
+{
+  "name": "claude-mod-status-light",
+  "owner": { "name": "Hugo Sales" },
+  "plugins": [{ "name": "status-light", "source": "./" }]
+}
