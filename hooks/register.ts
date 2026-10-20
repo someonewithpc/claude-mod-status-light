@@ -42,8 +42,12 @@ export const register: Register = (on, options) => {
     const answer = await next(e)
     tracker = new Tracker(await $.clock.now())
     written = ''
-    const env = await $.env.get('CLAUDE_STATUS_LIGHT_INLINE')
+    // Live, $.env.get answered unset here while the settings' env block set it.
+    const settings = await $.settings.read().catch(() => ({}))
+    const fromSettings = (settings as { env?: Record<string, unknown> }).env?.CLAUDE_STATUS_LIGHT_INLINE
+    const env = typeof fromSettings === 'string' ? fromSettings : await $.env.get('CLAUDE_STATUS_LIGHT_INLINE')
     isInline = env ? env !== 'off' : options.inline !== 'off'
+    if (!isInline) $.ui.status(undefined)
     const runtimeDir = (await $.env.get('XDG_RUNTIME_DIR')) || '/tmp'
     lightPath = `${runtimeDir}/claude-status-light/${await $.session.id()}.json`
     await show($, tracker.light)

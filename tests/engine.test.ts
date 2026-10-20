@@ -6,13 +6,14 @@ const ENDED = { answer: 'ok', durationMs: 1000, isAborted: false, turnId: 't1' }
 
 type World = { files: Record<string, string>; statuses: (string | undefined)[] }
 
-function worldOf(on: On): World {
+function worldOf(on: On, settings: Record<string, unknown> = {}): World {
   const world: World = { files: {}, statuses: [] }
   mock.clock(on, { now: Date.UTC(2026, 9, 20, 12) })
   mock.env(on, { XDG_RUNTIME_DIR: '/run/user/1000' })
   on('session.start', ($, e) => ({ cwd: e.cwd }))
   on('session.id', () => ({ value: 'abc' }))
   on('agent.list', () => ({ value: [] }))
+  on('settings.read', () => ({ value: settings }))
   on('turn.start', ($, e) => ({ turnId: e.turnId }))
   on('turn.complete', ($, e) => ({ text: e.answer }))
   on('tool.check', () => ({ decision: 'ask' }))
@@ -56,7 +57,14 @@ describe('through the engine', () => {
     const world = worldOf(on)
     await $.session.start(SESSION)
     await $.turn.start({ text: 'go', turnId: 't1' })
-    expect(world.statuses).toEqual([])
+    expect(world.statuses).toEqual([undefined])
     expect(kindOf(world)).toBe('working')
+  })
+
+  test('the settings env block turns the inline line off', async ($, on) => {
+    const world = worldOf(on, { env: { CLAUDE_STATUS_LIGHT_INLINE: 'off' } })
+    await $.session.start(SESSION)
+    await $.turn.start({ text: 'go', turnId: 't1' })
+    expect(world.statuses).toEqual([undefined])
   })
 })
