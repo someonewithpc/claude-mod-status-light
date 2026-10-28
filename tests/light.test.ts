@@ -95,6 +95,13 @@ describe('the light', () => {
     expect(t.turnComplete('aborted', T0).kind).toBe('interrupted')
   })
 
+  test('the spinner saying it compacts shows compacting until it says something else', () => {
+    const t = new Tracker(T0)
+    t.turnStart(T0)
+    expect(t.spinner('requesting', 'Compacting conversation', T0).kind).toBe('compacting')
+    expect(t.spinner('requesting', null, T0)).toMatchObject({ kind: 'working', detail: 'writing' })
+  })
+
   test('compaction shows over a finished turn', () => {
     const t = new Tracker(T0)
     t.turnComplete('answer', T0)

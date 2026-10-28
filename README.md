@@ -88,7 +88,11 @@ every session reads.
 ## How it knows
 
 Most states come straight from mod events: a turn starting and ending, tool
-calls, compaction. The rest are read off the screen's own parts:
+calls, a `/compact`. The rest are read off the screen's own parts:
+
+- Claude Code sends no compaction event to installed mods, and its own
+  auto-compaction runs no command. While it compacts, the spinner reads
+  "Compacting conversation", so that message shows as compacting.
 
 - A permission check that answers `ask` means a dialog. No event fires when you
   answer it, so the mod takes the next spinner redraw or tool progress row, or

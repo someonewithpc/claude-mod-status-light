@@ -25,6 +25,9 @@ type Pending = { id: string; tool: string; input: unknown; agentId?: string; at:
 
 const BACKGROUND = /\b(\d+) (shell|agent|monitor|workflow|task|teammate)s?\b/g
 
+/** What the spinner says while Claude Code compacts, its own auto-compaction included. */
+const COMPACTING = /^Compacting conversation/
+
 /** A dialog closing shows no event of its own; a redraw this long after it opened is taken as its end. */
 const SETTLE_MS = 300
 
@@ -39,6 +42,7 @@ export class Tracker {
   private agentTasks = 0
   private wakeAt: number | null = null
   private isCompacting = false
+  private isSpinnerCompacting = false
   private current: Light
 
   constructor(now: number) {
@@ -52,6 +56,7 @@ export class Tracker {
   turnStart(now: number): Light {
     this.turn = 'running'
     this.ended = null
+    this.isSpinnerCompacting = false
     this.activity = 'thinking'
     this.wakeAt = null
     this.asks.clear()
@@ -61,6 +66,7 @@ export class Tracker {
 
   turnComplete(reason: 'answer' | 'aborted' | 'refusal' | 'error', now: number): Light {
     this.turn = 'idle'
+    this.isSpinnerCompacting = false
     this.asks.clear()
     this.dialogs.clear()
     this.ended = reason === 'aborted' ? 'interrupted' : reason === 'answer' ? 'done' : 'error'
@@ -71,6 +77,8 @@ export class Tracker {
   /** The spinner's mode and, while a state overrides the word, its message (a retry, a wait). */
   spinner(mode: string, message: string | null, now: number): Light {
     this.clearAsksOlderThan(now - SETTLE_MS)
+    this.isSpinnerCompacting = message !== null && COMPACTING.test(message)
+    if (this.isSpinnerCompacting) return this.settle(now)
     if (message) this.activity = message
     else if (mode === 'thinking') this.activity = 'thinking'
     else if (mode === 'responding' || mode === 'requesting') this.activity = 'writing'
@@ -162,7 +170,7 @@ export class Tracker {
       return { kind: 'approval', label: 'needs approval', detail: who + activityOf(ask.tool, ask.input) }
     }
 
-    if (this.isCompacting) return { kind: 'compacting', label: 'compacting', detail: '' }
+    if (this.isCompacting || this.isSpinnerCompacting) return { kind: 'compacting', label: 'compacting', detail: '' }
     if (this.turn === 'running') return { kind: 'working', label: 'working', detail: this.activity }
 
     const background = this.backgroundOf(now)
