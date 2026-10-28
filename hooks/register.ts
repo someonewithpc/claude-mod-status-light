@@ -94,7 +94,8 @@ export const register: Register = (on, options) => {
     return verdict
   }).catch(($, e, next) => next(e))
 
-  on('session.compact', async ($, e, next) => {
+  // session.compact never reaches an installed mod; a person's /compact still does.
+  on('command.run', { command: 'compact' }, async ($, e, next) => {
     await show($, tracker.compacting(true, await $.clock.now()))
     try {
       return await next(e)

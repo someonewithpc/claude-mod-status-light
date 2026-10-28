@@ -44,6 +44,21 @@ describe('through the engine', () => {
     expect(world.statuses.at(-1)).toBe('🟢 your turn')
   })
 
+  test('a /compact shows compacting until it is done', async ($, on) => {
+    const world = worldOf(on)
+    const seen: string[] = []
+    on('command.run', () => {
+      seen.push(kindOf(world))
+      return { text: 'Compacted' }
+    })
+    await $.session.start(SESSION)
+    await $.turn.start({ text: 'go', turnId: 't1' })
+    await $.turn.complete({ ...ENDED, reason: 'answer' })
+    await $.command.run({ origin: { kind: 'composer' }, presentation: { isFullscreen: false, columns: 120 }, command: 'compact', args: '' })
+    expect(seen).toEqual(['compacting'])
+    expect(kindOf(world)).toBe('done')
+  })
+
   test('a permission query from a plugin is no dialog', async ($, on) => {
     const world = worldOf(on)
     await $.session.start(SESSION)
